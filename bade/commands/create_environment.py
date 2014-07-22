@@ -4,24 +4,152 @@ import click
 import os
 import re
 
-from ..utils import execute
+from ..utils import ExecutionError, execute, shout, retry
 
 
-_status_regex = re.compile(r'^(?P<hash>\w+)\s(?P<dir>[\w\-\_]+)\s.*')
+_status_regex = re.compile(r'^(?P<hash>\w+)\s(?P<name>[\w\-\_]+)\s.*')
 _module_regex = re.compile(
     r'path\s*=\s*(?P<path>[\w\/\-_]+)\s*\n'
      '\s*url\s*=\s*(?P<url>[\w\.\/\:\-_]+)\n'
 )
 
 
-def command(config, repo, base, target, branches):
+@retry(count=3, retry_on=ExecutionError)
+def initialize_repo(path, remote, base_branch, patches_repo):
+    """Either clones repo if it does not exits on 'path' already or just adds
+    new remote according to 'base_branch' name. In case repo is cloned origin
+    remote is renamed according to 'base_branch' name. Returns name of added
+    remote.
+    """
+    remote_name = 'origin-{0}'.format(base_branch)
+    _locals = locals()
+    if os.path.exists(path) and os.path.exists('{0}/.git'.format(path)):
+        # repository already exists
+        rc, stdout, stderr = execute(
+            'cd {path} && git remote show {remote_name}'.format(**_locals),
+            can_fail=False
+        )
+        if rc:
+            # remote does not exist so we add it
+            rc, stdout, stderr = execute(
+                'cd {path} && '
+                'git remote add {remote_name} {remote}'.format(**_locals)
+            )
+        else:
+            # remote already exists so we just change url
+            rc, stdout, stderr = execute(
+                'cd {path} && '
+                'git remote set-url {remote_name} {remote}'.format(**_locals)
+            )
+    else:
+        # repository does not exist
+        rc, stdout, stderr = execute(
+            'git clone {remote} {path} && '
+            'cd {path} && '
+            'git remote rename origin {remote_name}'.format(**_locals)
+        )
+
+    # add patches remote for patches repo if it does not exists
+    rc, stdout, stderr = execute(
+        'cd {path} && '
+        '(git remote show patches && '
+        ' git remote set-url patches {patches_repo}) || '
+        'git remote add patches {patches_repo} &&'
+        'git fetch --all'.format(**_locals)
+    )
+    return remote_name
+
+
+@retry(count=3, retry_on=ExecutionError)
+def initialize_patch_branch(path, commit, patch_branch):
+    """Either creates new 'patch_branch' from 'commit' and pushes it to
+    patches repo or pulls existing 'patch_branch' from patches repo.
+    """
+    _locals = locals()
+    rc, stdout, stderr = execute(
+        'cd {path} && '
+        'git branch | grep "{patch_branch}"'.format(**_locals),
+        can_fail=False
+    )
+    if not rc:
+        rc, stdout, stderr = execute(
+            'cd {path} && '
+            'git checkout {patch_branch} && '
+            'git pull patches {patch_branch}'.format(**_locals)
+        )
+    else:
+        rc, stdout, stderr = execute(
+            'cd {path} && '
+            'git checkout -b {patch_branch} {commit} && '
+            'git push patches {patch_branch}'.format(**_locals)
+        )
+
+
+def load_modules(repo, target, patches_repo_base, branches):
+    """Loads information about all submodules in given 'repo' for the list
+    of 'branches'.
+    """
+
+    modules = {}
+    for branch in branches:
+        modules.setdefault(branch, {})
+
+        rc, stdout, stderr = execute(
+            'cd {repo} &>/dev/null && '
+            'git checkout {branch} &>/dev/null && '
+            'git submodule update --init &>/dev/null && '
+            'git submodule status'.format(**locals())
+        )
+        for line in stdout.split('\n'):
+            match = _status_regex.match(line.strip())
+            if not match:
+                continue
+            module = match.group('name')
+            modules[branch].setdefault(module, {})
+
+            modules[branch][module]['commit'] = match.group('hash')
+            rc, stdout, stderr = execute(
+                'cd {repo} && cat .gitmodules | '
+                'grep -A2 "\\[submodule \\"{module}\\"\\]"'.format(**locals())
+            )
+            match = _module_regex.search(stdout)
+            if not match:
+                raise RuntimeError('Module {module} has not been found '
+                                   'in .gitmodules'.format(**locals()))
+
+            modules[branch][module]['path'] = os.path.join(target,
+                                                           match.group('path'))
+            modules[branch][module]['url'] = url = match.group('url')
+
+            base_name = os.path.basename(url)
+            if base_name.endswith('.git'):
+               base_name = base_name[:-4]
+            modules[branch][module]['patches_repo'] = os.path.join(
+                patches_repo_base,
+                '{0}-patches.git'.format(base_name)
+            )
+    return modules
+
+
+def command(config, repo, base, target, branches, name):
     """Clones all submodule repos of 'repo' to 'target' directory and sets
     them remote named patches with url composed from
     <base>/<submodule-basename>-patches. Patches remotes have to exist
     in advance. If list of 'branches' are given also patches branches
     are created and pushed to patches repos. Format of branches item is:
-    main-repo-branch:patches-repo-branch
+    main-repo-branch:patches-repo-branch.
     """
+    # initial setup
+    if not branches:
+        branches = 'master:patches'
+    branches = map(
+        lambda x: tuple(x.split(':', 1)),
+        [i.strip() for i in branches.split(',')]
+    )
+    branch_map = {}
+    for br in branches:
+        branch_map.setdefault(br[0], []).append(br[1])
+
     repo = os.path.abspath(repo)
     target = os.path.abspath(target)
     _locals = locals()
@@ -30,53 +158,56 @@ def command(config, repo, base, target, branches):
         click.echo('Given repo does not exist: {repo}'.format(**_locals))
         return 1
 
-    if config.verbose:
-        click.echo(
-            'Creating target directory: {target}'.format(**_locals)
-        )
+    config_dir = os.path.expanduser('~/.config/bade/environments')
+    if not os.path.exists(config_dir):
+        os.makedirs(config_dir)
+
+    shout('Creating target directory: {target}'.format(**_locals),
+          config.verbose)
     os.makedirs(os.path.abspath(target))
 
-    rc, stdout, stderr = execute(
-        'cd {repo} && git submodule status'.format(**_locals)
-    )
-    for line in stdout.split('\n'):
-        match = _status_regex.match(line.strip())
-        if not match:
-            continue
+    shout('Loading module map', config.verbose)
+    module_map = load_modules(repo, target, base, branch_map.keys())
 
-        module = match.group('dir')
-        commit = match.group('hash')
-        _locals = locals()
-        rc, stdout, stderr = execute(
-            'cd {repo} && cat .gitmodules |'
-            ' grep -A2 "\\[submodule \\"{module}\\"\\]"'.format(**_locals)
-        )
-        match = _module_regex.search(stdout)
-        if not match:
-            raise RuntimeError('Module {module} has not been found '
-                               'in .gitmodules'.format(**_locals))
-
-        path = match.group('path')
-        url = match.group('url')
-        base_name = os.path.basename(url)
-        if base_name.endswith('.git'):
-           base_name = base_name[:-4]
-        base_name = '{0}-patches'.format(base_name)
-        _locals = locals()
-        if config.verbose:
-            click.echo(
-                'Initializing patches repo for {module}'.format(**_locals),
-                nl=False
+    # creation of patches repos
+    module_list = {}
+    for branch, modules in module_map.items():
+        for module, info in modules.items():
+            index = '{0}:{1}'.format(branch, module)
+            module_list.setdefault(index, {'path': info['path']}
             )
-        rc, stdout, stderr = execute(
-            'cd {target} && '
-            'git clone {url} {path}'.format(**_locals)
-        )
+            shout(
+                'Initializing patches repo for module {module} '
+                    'on branch {branch}:'.format(**locals()),
+                config.verbose
+            )
+            remote = initialize_repo(info['path'], info['url'], branch,
+                                     info['patches_repo'])
+            for patch_branch in branch_map[branch]:
+                module_list[index].setdefault('branches', []).append(
+                    patch_branch
+                )
+                shout(
+                    ' - initializing patch branch '
+                        '{patch_branch}'.format(**locals()),
+                    config.verbose
+                )
+                initialize_patch_branch(info['path'], info['commit'],
+                                        patch_branch)
 
-        rc, stdout, stderr = execute(
-            'cd {target}/{path} && '
-            'git remote add patches {base}/{base_name} && '
-            'git fetch --all'.format(**_locals)
-        )
-        if config.verbose:
-            click.echo(' ... DONE')
+    # safe environment
+    with open(os.path.join(config_dir, '{0}.conf'.format(name)), 'w') as env:
+        env.writelines([
+            '[meta]\n',
+            'base_repo={0}\n'.format(repo),
+            'patches_path={0}\n'.format(target),
+            'modules={0}\n'.format(','.join(module_list.keys())),
+            '\n',
+        ])
+        for module, info in module_list.items():
+            env.writelines([
+                '[{0}]\n'.format(module),
+                'path={0}\n'.format(info['path']),
+                'branches={0}\n'.format(','.join(info['branches'])),
+                '\n'
+            ])

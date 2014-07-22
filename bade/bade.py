@@ -51,17 +51,24 @@ def bade(config, verbose):
 @click.option('--branches', default='',
               help='Comma separated list of items in format '
                    'main_branch:patches_branch')
+@click.argument('name', default='default')
 @pass_config
-def create_environment_wrapper(config, repo, base, target, branches):
+def create_environment_wrapper(config, repo, base, target, branches, name):
+    """Creates patches environment. Accepts argument environment name."""
     try:
-        create_environment.command(config, repo, base, target, branches)
-    except ExecutionError as ex:
+        create_environment.command(config, repo, base, target, branches, name)
+    except utils.ExecutionError as ex:
         click.echo(ex)
         if config.verbose:
             click.echo(
                 '========= stdout =========\n{stdout}\n'
                 '========= stderr =========\n{stderr}'.format(**ex.__dict__)
             )
+    except Exception as ex:
+        click.echo(ex)
+        if config.verbose:
+            raise ex
+
 
 if __name__ == '__main__':
     bade()
