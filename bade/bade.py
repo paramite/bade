@@ -24,7 +24,7 @@
 
 import click
 
-from .commands import create_environment
+from .commands import create_environment, rebase
 from . import utils
 
 # Setup option container
@@ -54,7 +54,9 @@ def bade(config, verbose):
 @click.argument('name', default='default')
 @pass_config
 def create_environment_wrapper(config, repo, base, target, branches, name):
-    """Creates patches environment. Accepts argument environment name."""
+    """Creates patches environment.
+    Accepts arguments: [environment_name]
+    """
     try:
         create_environment.command(config, repo, base, target, branches, name)
     except utils.ExecutionError as ex:
@@ -67,8 +69,31 @@ def create_environment_wrapper(config, repo, base, target, branches, name):
     except Exception as ex:
         click.echo(ex)
         if config.verbose:
-            raise ex
+            raise
 
+
+@bade.command('rebase')
+@click.argument('environment', required=True)
+@click.argument('branch', required=True)
+@click.argument('module', default='')
+@pass_config
+def rebase_wrapper(config, environment, branch, module):
+    """Rebases branch for given module of given environment.
+    Accepts arguments: environment_name, patch_branch_name, module_name
+    """
+    try:
+        rebase.command(config, environment, branch, module)
+    except utils.ExecutionError as ex:
+        click.echo(ex)
+        if config.verbose:
+            click.echo(
+                '========= stdout =========\n{stdout}\n'
+                '========= stderr =========\n{stderr}'.format(**ex.__dict__)
+            )
+    except Exception as ex:
+        click.echo(ex)
+        if config.verbose:
+            raise
 
 if __name__ == '__main__':
     bade()

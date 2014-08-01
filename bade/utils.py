@@ -2,9 +2,18 @@
 
 import click
 import pipes
+import re
 import subprocess
 import time
 import types
+
+
+_status_regex = re.compile(r'^\s*(?P<hash>\w+)\s(?P<name>[\w\-\_]+)\s.*')
+_module_regex = re.compile(
+    r'\[submodule "(?P<name>[\w\/\-_\.]+)"\]\n'
+     '\s*path\s*=\s*(?P<path>[\w\/\-_]+)\s*\n'
+     '\s*url\s*=\s*(?P<url>[\w\.\/\:\-_]+)\n'
+)
 
 
 class ExecutionError(RuntimeError):
@@ -62,3 +71,28 @@ def retry(count=1, delay=0, retry_on=Exception):
 def shout(msg, verbose=False, nl=True):
     if verbose:
         click.echo(msg, nl=nl)
+
+
+def parse_submodule_status(stdout):
+    result = {}
+    for line in stdout.split('\n'):
+        match = _status_regex.match(line.strip())
+        if not match:
+            continue
+        module = match.group('name')
+        result.setdefault(module, {'commit': match.group('hash')})
+    return result
+
+
+def parse_gitmodule(stdout):
+    result = {}
+    match = _module_regex.search(stdout)
+    if not match:
+        raise RuntimeError('Module has not been found in .gitmodules')
+
+    module = match.group('name')
+    result.setdefault(module, {
+        'path': match.group('path'),
+        'url': match.group('url')
+    })
+    return result
