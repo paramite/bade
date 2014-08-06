@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 
+try:
+    # Python2.x
+    import ConfigParser as configparser
+except ImportError:
+    # Python 3.x
+    import configparser
+
 import click
+import os
 import pipes
 import re
 import subprocess
@@ -96,3 +104,57 @@ def parse_gitmodule(stdout):
         'url': match.group('url')
     })
     return result
+
+
+def load_environment(name):
+    """Returns given environment configuration dict."""
+    env = {}
+
+    env_cfg_path = os.path.expanduser(
+        os.path.join('~/.config/bade/environments', '{0}.conf'.format(name))
+    )
+    env_cfg = configparser.SafeConfigParser()
+    if not env_cfg.read(env_cfg_path):
+        raise RuntimeError('Failed to parse config file %s.' % env_cfg_path)
+
+    env['base_repo'] = env_cfg.get('meta', 'base_repo')
+    env['base_branches'] = [
+        i.strip()
+        for i in env_cfg.get('meta', 'base_branches').split(',')
+        if i.strip()
+    ]
+    env['patches_path'] = env_cfg.get('meta', 'patches_path')
+
+    env['modules'] = []
+    for module in env_cfg.get('meta', 'modules').split(','):
+        module = module.strip()
+        env['modules'].append({
+            'module': module,
+            'path': env_cfg.get(module, 'path'),
+            'branches': [
+                i.strip()
+                for i in env_cfg.get(module, 'branches').split(',')
+                if i.strip()
+            ],
+        })
+    return env
+
+
+def get_base_branch(env, patch_branch):
+    """Returns base branch for given patch branch."""
+    base_branch = None
+    for module in env['modules']:
+        for branch in module['branches']:
+            if branch != patch_branch:
+                continue
+            base = module['module'].split(':', 1)[0].strip()
+            if base_branch is None:
+                base_branch = base
+            elif base != base_branch:
+                raise RuntimeError(
+                    'Base branch for branch {patch_branch} differs for module '
+                    '{module} from other modules ({base_branch}). Please fix '
+                    'that manually in ~/.config/bade/environments/{env}.conf '
+                    'and try again.'.format(**locals())
+                )
+    return base_branch

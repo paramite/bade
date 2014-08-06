@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import click
 import os
-import re
 
 from .. import utils
-
-
-_status_regex = re.compile(r'^(?P<hash>\w+)\s(?P<name>[\w\-\_]+)\s.*')
-_module_regex = re.compile(
-    r'path\s*=\s*(?P<path>[\w\/\-_]+)\s*\n'
-     '\s*url\s*=\s*(?P<url>[\w\.\/\:\-_]+)\n'
-)
 
 
 @utils.retry(count=3, retry_on=utils.ExecutionError)
@@ -145,7 +136,9 @@ def command(config, repo, base, target, branches, name):
     _locals = locals()
 
     if not os.path.exists(repo):
-        click.echo('Given repo does not exist: {repo}'.format(**_locals))
+        utils.shout(
+            'Given repo does not exist: {repo}'.format(**_locals)
+        )
         return 1
 
     config_dir = os.path.expanduser('~/.config/bade/environments')
