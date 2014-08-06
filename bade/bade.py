@@ -24,7 +24,7 @@
 
 import click
 
-from .commands import create_environment, rebase
+from .commands import create_environment, rebase, update
 from . import utils
 
 # Setup option container
@@ -78,11 +78,37 @@ def create_environment_wrapper(config, repo, base, target, branches, name):
 @click.argument('module', default='')
 @pass_config
 def rebase_wrapper(config, environment, branch, module):
-    """Rebases branch for given module of given environment.
+    """Rebases branch for given module of given environment. In case module
+    is not given all modules are rebased.
     Accepts arguments: environment_name, patch_branch_name, module_name
     """
     try:
         rebase.command(config, environment, branch, module)
+    except utils.ExecutionError as ex:
+        click.echo(ex)
+        if config.verbose:
+            click.echo(
+                '========= stdout =========\n{stdout}\n'
+                '========= stderr =========\n{stderr}'.format(**ex.__dict__)
+            )
+    except Exception as ex:
+        click.echo(ex)
+        if config.verbose:
+            raise
+
+
+@bade.command('update')
+@click.argument('environment', required=True)
+@click.argument('branch', required=True)
+@click.argument('module', default='')
+@pass_config
+def update_wrapper(config, environment, branch, module):
+    """Updates branch for given module of given environment from upstream repo.
+    In case module is not given all modules are updated.
+    Accepts arguments: environment_name, patch_branch_name, module_name
+    """
+    try:
+        update.command(config, environment, branch, module)
     except utils.ExecutionError as ex:
         click.echo(ex)
         if config.verbose:
