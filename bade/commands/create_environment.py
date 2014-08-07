@@ -86,26 +86,25 @@ def load_modules(repo, target, patches_repo_base, branches):
         rc, stdout, stderr = utils.execute(
             'cd {repo} &>/dev/null && '
             'git checkout {branch} &>/dev/null && '
-            'git submodule sync && '
+            'git submodule sync &>/dev/null && '
             'git submodule update --init &>/dev/null && '
             'git submodule status'.format(**locals())
         )
-        modules[branch] = parse_submodule_status(stdout)
+        modules[branch] = utils.parse_submodule_status(stdout)
 
         for module, info in modules[branch].items():
             rc, stdout, stderr = utils.execute(
                 'cd {repo} && cat .gitmodules | '
                 'grep -A2 "\\[submodule \\"{module}\\"\\]"'.format(**locals())
             )
-            module_def = parse_gitmodule(stdout)
-            modules[branch][module]['path'] = os.path.join(target,
-                                                           module_def['path'])
-            modules[branch][module]['url'] = url = module_def['url']
+            info.update(utils.parse_gitmodule(stdout)[module])
 
-            base_name = os.path.basename(url)
+            nfo = modules[branch][module]
+            nfo['path'] = os.path.join(target, nfo['path'])
+            base_name = os.path.basename(nfo['url'])
             if base_name.endswith('.git'):
                base_name = base_name[:-4]
-            modules[branch][module]['patches_repo'] = os.path.join(
+            nfo['patches_repo'] = os.path.join(
                 patches_repo_base,
                 '{0}-patches.git'.format(base_name)
             )
