@@ -24,7 +24,7 @@
 
 import click
 
-from .commands import create_environment, rebase, update
+from . import commands
 from . import utils
 
 # Setup option container
@@ -42,84 +42,26 @@ def bade(config, verbose):
     config.verbose = verbose
 
 
-@bade.command('create-environment')
-@click.option('--repo', default='.',
-              help='Base Git repository')
-@click.option('--base', help='Base URL for patches repos')
-@click.option('--target', default='.',
-              help='Target directory for patches repos')
-@click.option('--branches', default='',
-              help='Comma separated list of items in format '
-                   'main_branch:patches_branch')
-@click.argument('name', default='default')
+@bade.command('init')
+@click.argument('repo', default='.')
 @pass_config
-def create_environment_wrapper(config, repo, base, target, branches, name):
-    """Creates patches environment.
-    Accepts arguments: [environment_name]
-    """
+def init_wrapper(config, repo):
+    """Creates git subtree hierarchyfrom Puppetfile located in cwd or
+    from repo given by argument."""
     try:
-        create_environment.command(config, repo, base, target, branches, name)
+        commands.init.command(config, repo)
     except utils.ExecutionError as ex:
-        click.echo(ex)
+        shout(ex, verbose=config.verbose, nl=True, level='info'):
         if config.verbose:
             click.echo(
-                '========= stdout =========\n{stdout}\n'
-                '========= stderr =========\n{stderr}'.format(**ex.__dict__)
+                '====== stdout ======\n{stdout}\n'
+                '====== stderr ======\n{stderr}'.format(**ex.__dict__)
             )
     except Exception as ex:
         click.echo(ex)
         if config.verbose:
             raise
 
-
-@bade.command('rebase')
-@click.argument('environment', required=True)
-@click.argument('branch', required=True)
-@click.argument('module', default='')
-@pass_config
-def rebase_wrapper(config, environment, branch, module):
-    """Rebases branch for given module of given environment. In case module
-    is not given all modules are rebased.
-    Accepts arguments: environment_name, patch_branch_name, module_name
-    """
-    try:
-        rebase.command(config, environment, branch, module)
-    except utils.ExecutionError as ex:
-        click.echo(ex)
-        if config.verbose:
-            click.echo(
-                '========= stdout =========\n{stdout}\n'
-                '========= stderr =========\n{stderr}'.format(**ex.__dict__)
-            )
-    except Exception as ex:
-        click.echo(ex)
-        if config.verbose:
-            raise
-
-
-@bade.command('update')
-@click.argument('environment', required=True)
-@click.argument('branch', required=True)
-@click.argument('module', default='')
-@pass_config
-def update_wrapper(config, environment, branch, module):
-    """Updates branch for given module of given environment from upstream repo.
-    In case module is not given all modules are updated.
-    Accepts arguments: environment_name, patch_branch_name, module_name
-    """
-    try:
-        update.command(config, environment, branch, module)
-    except utils.ExecutionError as ex:
-        click.echo(ex)
-        if config.verbose:
-            click.echo(
-                '========= stdout =========\n{stdout}\n'
-                '========= stderr =========\n{stderr}'.format(**ex.__dict__)
-            )
-    except Exception as ex:
-        click.echo(ex)
-        if config.verbose:
-            raise
 
 if __name__ == '__main__':
     bade()
