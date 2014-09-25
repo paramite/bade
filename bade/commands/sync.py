@@ -6,14 +6,25 @@ from .. import utils
 from . import init
 
 
-def check_module_branch(repo, branch, module):
-    """Returns current commit hash in module branch."""
+def check_module_branch(repo, branch, module, info):
+    """Returns current commit hash in module branch. Module branch
+    is created according to Puppetfile if it does not exist.
+    """
+    _locals = locals()
+    rc, stdout, stderr = utils.execute(
+        'cd {repo} &>/dev/null && '
+        'git checkout {branch}-{module}'.format(**_locals),
+        can_fail=False
+    )
+    if rc:
+        init.create_module_branch(repo, branch, module, info)
+
     # get current state
     rc, stdout, stderr = utils.execute(
         'cd {repo} &>/dev/null && '
         'git checkout {branch}-{module} &>/dev/null && '
         'git rev-parse HEAD && '
-        'git checkout {branch} &>/dev/null'.format(**locals())
+        'git checkout {branch} &>/dev/null'.format(**_locals)
     )
     return stdout.strip()
 
@@ -46,7 +57,7 @@ def command(config, repo, commit):
             verbose=config.verbose,
             level='info'
         )
-        current = check_module_branch(repo, branch, module)
+        current = check_module_branch(repo, branch, module, info)
         if current != info['commit']:
             # recreate module branch
             init.create_module_branch(repo, branch, module, info)

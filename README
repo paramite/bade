@@ -9,11 +9,17 @@ Examples:
 a) create Puppetfile in your git repo, commit Puppetfile
 b) run "bade init" or "bade init --commit" if you want to generate a commit too
 
-2. To synchronize state of modules with Puppetfile content:
+2. To initialize just module branches localy:
+a) clone repo with modules
+b) run "bade sync"
+
+3. To synchronize state of modules with Puppetfile content:
 a) do your updates in Puppetfile, commit changes in Puppetfile
 b) run "bade sync" or "bade init --commit" if you want to generate a commit too
 
+
 TO-DO:
+- spec command for generating SPEC file from template
 - add command for adding modules
 - rm command for removing modules
-- spec command for generating SPEC file from template
+- unit tests
