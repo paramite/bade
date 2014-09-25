@@ -1,3 +1,19 @@
 == Bade ==
 
-Base is a simple CLI utility focused to ease work with GIT submodules.
+Base is a simple CLI utility focused to ease work with Puppet modules.
+Each module is managed via GIT subtree and metadata from Puppetfile.
+
+Examples:
+
+1. To initialize repo with modules:
+a) create Puppetfile in your git repo, commit Puppetfile
+b) run "bade init" or "bade init --commit" if you want to generate a commit too
+
+2. To synchronize state of modules with Puppetfile content:
+a) do your updates in Puppetfile, commit changes in Puppetfile
+b) run "bade sync" or "bade init --commit" if you want to generate a commit too
+
+TO-DO:
+- add command for adding modules
+- rm command for removing modules
+- spec command for generating SPEC file from template

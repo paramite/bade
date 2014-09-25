@@ -43,22 +43,59 @@ def bade(config, verbose):
 
 
 @bade.command('init')
+@click.option('--commit', is_flag=True,
+              help='Create commit after initialization.')
 @click.argument('repo', default='.')
 @pass_config
-def init_wrapper(config, repo):
-    """Creates git subtree hierarchyfrom Puppetfile located in cwd or
+def init_wrapper(config, repo, commit):
+    """Creates git subtree hierarchy from Puppetfile located in cwd or
     from repo given by argument."""
     try:
-        commands.init.command(config, repo)
+        utils.shout(
+            'Initializing git subtree hierarchy for {0}'.format(repo),
+            verbose=config.verbose,
+            level='info'
+        )
+        commands.init.command(config, repo, commit)
     except utils.ExecutionError as ex:
-        shout(ex, verbose=config.verbose, nl=True, level='info'):
-        if config.verbose:
-            click.echo(
-                '====== stdout ======\n{stdout}\n'
-                '====== stderr ======\n{stderr}'.format(**ex.__dict__)
-            )
+        utils.shout(ex, verbose=True, level='error')
+        utils.shout(
+            '====== stdout ======\n{stdout}\n'
+            '====== stderr ======\n{stderr}'.format(**ex.__dict__),
+            verbose=config.verbose,
+            level=None,
+        )
     except Exception as ex:
-        click.echo(ex)
+        utils.shout(ex, verbose=True, level='error')
+        if config.verbose:
+            raise
+
+
+@bade.command('sync')
+@click.option('--commit', is_flag=True,
+              help='Create commit after sync.')
+@click.argument('repo', default='.')
+@pass_config
+def sync_wrapper(config, repo, commit):
+    """Updates git subtree hierarchy from Puppetfile located in cwd or
+    from repo given by argument."""
+    try:
+        utils.shout(
+            'Updating git subtree hierarchy for {0}'.format(repo),
+            verbose=config.verbose,
+            level='info'
+        )
+        commands.sync.command(config, repo, commit)
+    except utils.ExecutionError as ex:
+        utils.shout(ex, verbose=True, level='error')
+        utils.shout(
+            '====== stdout ======\n{stdout}\n'
+            '====== stderr ======\n{stderr}'.format(**ex.__dict__),
+            verbose=config.verbose,
+            level=None,
+        )
+    except Exception as ex:
+        utils.shout(ex, verbose=True, level='error')
         if config.verbose:
             raise
 
