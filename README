@@ -24,7 +24,7 @@ b) run "spec --version <version> --release <release> --old /path/to/current/file
 
 TO-DO:
 - spec command for generating SPEC file from template [DONE]
-- spec command should parse patches from old file
+- spec command should parse patches from old file [DONE]
 - add command for adding modules
 - rm command for removing modules
 - unit tests

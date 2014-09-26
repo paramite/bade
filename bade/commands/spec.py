@@ -69,6 +69,14 @@ def command(config, repo, version, release, old, output, template):
     old_changelog = u'' if rc else stdout[len('%changelog'):]
     old_changelog = old_changelog.decode('utf-8')
 
+    # get patches from old spec
+    rc, stdout, stderr = utils.execute(
+        'grep "^Patch[0-9]*:" {old}'.format(**_locals),
+        can_fail=False
+    )
+    patches = u'' if rc else stdout.decode('utf-8')
+    print 'grep "^Patch[0-9]+:" {old}'.format(**_locals)
+
     # get current date
     current_date = datetime.datetime.today()
 
