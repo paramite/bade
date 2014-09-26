@@ -1,8 +1,4 @@
 
-[@ for item in puppetfile|dictsort @]
-%global [[ item.0|global ]]_commit [[ item.1.commit|rjust(item.0, 16) ]]
-[@ endfor @]
-
 Name:           openstack-puppet-modules
 Version:        [[ version ]]
 Release:        [[ release ]]%{?dist}
@@ -19,7 +15,7 @@ A collection of Puppet modules used to install and configure OpenStack.
 
 
 %prep
-%setup 0
+%setup
 
 find %{_builddir}/%{name}-%{version}/ -type f -name ".*" -exec rm {} +
 find %{_builddir}/%{name}-%{version}/ -size 0 -exec rm {} +
@@ -36,8 +32,10 @@ find %{_builddir}/%{name}-%{version}/ \( -name spec -o -name ext \) | xargs rm -
 rm -rf %{buildroot}
 install -d -m 0755 %{buildroot}/%{_datadir}/openstack-puppet/modules/
 [@ for item in puppetfile|dictsort @]
-cp -r [[ item.1.fullname ]]-%{[[ item.0|global ]]_commit} %{buildroot}/%{_datadir}/openstack-puppet/modules/[[ item.0 ]]
+cp -r %{name}-%{version}-%{release}/[[ item.0 ]] %{buildroot}/%{_datadir}/openstack-puppet/modules/[[ item.0 ]]
 [@ endfor @]
+cp %{name}-%{version}-%{release}/Puppetfile %{buildroot}/%{_datadir}/openstack-puppet/modules/Puppetfile
+rm -f %{buildroot}/%{_datadir}/openstack-puppet/modules/nova/files/nova-novncproxy.init
 
 
 %files
@@ -47,4 +45,7 @@ cp -r [[ item.1.fullname ]]-%{[[ item.0|global ]]_commit} %{buildroot}/%{_datadi
 %changelog
 * [[ current_date|datetime ]] [[ user_name ]] <[[ user_email ]]> - [[ version ]]-[[ release ]]
 -  Updated to release [[ version ]]-[[ release ]]
+[@ for item in puppetfile|dictsort @]
+- [[ item.0 ]] [[ item.1.commit|rjust(item.0, 12) ]]
+[@ endfor @]
 [[ old_changelog ]]
