@@ -1,2 +1,2 @@
 
-from . import init, sync
+from . import init, sync, spec

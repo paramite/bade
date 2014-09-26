@@ -23,9 +23,17 @@
 #
 
 import click
+import os
 
 from . import commands
 from . import utils
+
+
+DEFAULT_OUTPUT = os.path.expanduser(
+    '~/rpmbuild/SPECS/openstack-puppet-modules.spec'
+)
+DEFAULT_TEMPLATE = 'openstack-puppet-modules.template'
+
 
 # Setup option container
 class Config(object):
@@ -86,6 +94,47 @@ def sync_wrapper(config, repo, commit):
             level='info'
         )
         commands.sync.command(config, repo, commit)
+    except utils.ExecutionError as ex:
+        utils.shout(ex, verbose=True, level='error')
+        utils.shout(
+            '====== stdout ======\n{stdout}\n'
+            '====== stderr ======\n{stderr}'.format(**ex.__dict__),
+            verbose=config.verbose,
+            level=None,
+        )
+    except Exception as ex:
+        utils.shout(ex, verbose=True, level='error')
+        if config.verbose:
+            raise
+
+
+@bade.command('spec')
+@click.option('--version', required=True,
+              help='Version for a tag.')
+@click.option('--release', required=True,
+              help='Release for a tag.')
+@click.option('--old', required=True,
+              help='Path to old SPEC file.')
+@click.option('--output', default=DEFAULT_OUTPUT,
+               help='Path to output SPEC file.')
+@click.option('--template', default=DEFAULT_TEMPLATE,
+               help='Path to template from which SPEC is generated.')
+@click.argument('repo', default='.')
+@pass_config
+def sync_wrapper(config, repo, version, release, old, output,
+                 template):
+    """Generates SPEC file from Puppetfile and tags repo appropriately.
+    """
+    try:
+        utils.shout(
+            'Generating SPEC file {0} from template {1}'.format(
+                output, template
+            ),
+            verbose=config.verbose,
+            level='info'
+        )
+        commands.spec.command(config, repo, version, release, old,
+                              output, template)
     except utils.ExecutionError as ex:
         utils.shout(ex, verbose=True, level='error')
         utils.shout(

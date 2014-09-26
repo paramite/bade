@@ -1,0 +1,50 @@
+
+[@ for item in puppetfile|dictsort @]
+%global [[ item.0|global ]]_commit [[ item.1.commit|rjust(item.0, 16) ]]
+[@ endfor @]
+
+Name:           openstack-puppet-modules
+Version:        [[ version ]]
+Release:        [[ release ]]%{?dist}
+Summary:        Set of Puppet modules used to deploy OpenStack
+License:        ASL 2.0 and GPLv2 and GPLv3
+URL:            https://github.com/redhat-openstack/openstack-puppet-modules
+
+Source:         https://github.com/redhat-openstack/openstack-puppet-modules/archive/%{version}-%{release}.tar.gz
+BuildArch:      noarch
+Requires:       rubygem-json
+
+%description
+A collection of Puppet modules used to install and configure OpenStack.
+
+
+%prep
+%setup 0
+
+find %{_builddir}/%{name}-%{version}/ -type f -name ".*" -exec rm {} +
+find %{_builddir}/%{name}-%{version}/ -size 0 -exec rm {} +
+find %{_builddir}/%{name}-%{version}/ \( -name "*.pl" -o -name "*.sh"  \) -exec chmod +x {} +
+find %{_builddir}/%{name}-%{version}/ \( -name "*.pp" -o -name "*.py"  \) -exec chmod -x {} +
+find %{_builddir}/%{name}-%{version}/ \( -name "*.rb" -o -name "*.erb" \) -exec chmod -x {} + -exec sed -i "/^#!/{d;q}" {} +
+find %{_builddir}/%{name}-%{version}/ \( -name spec -o -name ext \) | xargs rm -rf
+
+
+%build
+
+
+%install
+rm -rf %{buildroot}
+install -d -m 0755 %{buildroot}/%{_datadir}/openstack-puppet/modules/
+[@ for item in puppetfile|dictsort @]
+cp -r [[ item.1.fullname ]]-%{[[ item.0|global ]]_commit} %{buildroot}/%{_datadir}/openstack-puppet/modules/[[ item.0 ]]
+[@ endfor @]
+
+
+%files
+%{_datadir}/openstack-puppet/modules/*
+
+
+%changelog
+* [[ current_date|datetime ]] [[ user_name ]] <[[ user_email ]]> - [[ version ]]-[[ release ]]
+-  Updated to release [[ version ]]-[[ release ]]
+[[ old_changelog ]]

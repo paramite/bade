@@ -17,9 +17,14 @@ b) run "bade sync"
 a) do your updates in Puppetfile, commit changes in Puppetfile
 b) run "bade sync" or "bade init --commit" if you want to generate a commit too
 
+4. To generate SPEC file from Puppetfile and tag repo with "version-release" tag:
+a) do step 3.
+b) run "spec --version <version> --release <release> --old /path/to/current/file.spec --output /path/to/new/file.spec"
+
 
 TO-DO:
-- spec command for generating SPEC file from template
+- spec command for generating SPEC file from template [DONE]
+- spec command should parse patches from old file
 - add command for adding modules
 - rm command for removing modules
 - unit tests
