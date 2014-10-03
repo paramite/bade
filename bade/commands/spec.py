@@ -74,8 +74,13 @@ def command(config, repo, version, release, old, output, template):
         'grep "^Patch[0-9]*:" {old}'.format(**_locals),
         can_fail=False
     )
-    patches = u'' if rc else stdout.decode('utf-8')
-    print 'grep "^Patch[0-9]+:" {old}'.format(**_locals)
+    patches_list = u'' if rc else stdout.decode('utf-8')
+
+    rc, stdout, stderr = utils.execute(
+        'grep "^%patch[0-9]*" {old}'.format(**_locals),
+        can_fail=False
+    )
+    patches_apply = u'' if rc else stdout.decode('utf-8')
 
     # get current date
     current_date = datetime.datetime.today()

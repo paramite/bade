@@ -7,7 +7,7 @@ License:        ASL 2.0 and GPLv2 and GPLv3
 URL:            https://github.com/redhat-openstack/openstack-puppet-modules
 
 Source:         https://github.com/redhat-openstack/openstack-puppet-modules/archive/%{version}-%{release}.tar.gz
-[[ patches ]]
+[[ patches_list ]]
 BuildArch:      noarch
 Requires:       rubygem-json
 
@@ -17,6 +17,7 @@ A collection of Puppet modules used to install and configure OpenStack.
 
 %prep
 %setup
+[[ patches_apply ]]
 
 find %{_builddir}/%{name}-%{version}/ -type f -name ".*" -exec rm {} +
 find %{_builddir}/%{name}-%{version}/ -size 0 -exec rm {} +
