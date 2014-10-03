@@ -149,5 +149,36 @@ def sync_wrapper(config, repo, version, release, old, output,
             raise
 
 
+@bade.command('clean')
+@click.option('--branch', default=None,
+              help='Base branch to clean')
+@click.argument('repo', default='.')
+@pass_config
+def clean_wrapper(config, repo, branch):
+    """Removes module branches which have been created to synchronize base
+    branch.
+    """
+    if not branch:
+        branch = utils.get_current_branch(repo)
+    try:
+        utils.shout(
+            'Removing module branches for base branch {0}'.format(branch),
+            verbose=config.verbose,
+            level='info'
+        )
+        commands.clean.command(config, repo, branch)
+    except utils.ExecutionError as ex:
+        utils.shout(ex, verbose=True, level='error')
+        utils.shout(
+            '====== stdout ======\n{stdout}\n'
+            '====== stderr ======\n{stderr}'.format(**ex.__dict__),
+            verbose=config.verbose,
+            level=None,
+        )
+    except Exception as ex:
+        utils.shout(ex, verbose=True, level='error')
+        if config.verbose:
+            raise
+
 if __name__ == '__main__':
     bade()
