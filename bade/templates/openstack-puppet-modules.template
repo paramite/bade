@@ -2,17 +2,20 @@
 Name:           openstack-puppet-modules
 Version:        [[ version ]]
 Release:        [[ release ]]%{?dist}
-Summary:        Set of Puppet modules used to deploy OpenStack
+Summary:        Collection of Puppet modules for OpenStack deployment
 License:        ASL 2.0 and GPLv2 and GPLv3
-URL:            https://github.com/redhat-openstack/openstack-puppet-modules
 
-Source:         https://github.com/redhat-openstack/openstack-puppet-modules/archive/%{version}-%{release}.tar.gz
+URL:            https://github.com/redhat-openstack
+
+Source0:        https://github.com/redhat-openstack/openstack-puppet-modules/archive/%{name}-%{version}.tar.gz
+
 [[ patches_list ]]
 BuildArch:      noarch
 Requires:       rubygem-json
 
 %description
-A collection of Puppet modules used to install and configure OpenStack.
+A collection of Puppet modules which are required to install and configure
+OpenStack via installers using Puppet configuration tool.
 
 
 %prep
@@ -34,19 +37,20 @@ find %{_builddir}/%{name}-%{version}/ \( -name spec -o -name ext \) | xargs rm -
 rm -rf %{buildroot}
 install -d -m 0755 %{buildroot}/%{_datadir}/openstack-puppet/modules/
 [@ for item in puppetfile|dictsort @]
-cp -r %{name}-%{version}-%{release}/[[ item.0 ]] %{buildroot}/%{_datadir}/openstack-puppet/modules/[[ item.0 ]]
+cp -r [[ item.0 ]] %{buildroot}/%{_datadir}/openstack-puppet/modules/[[ item.0 ]]
 [@ endfor @]
-cp %{name}-%{version}-%{release}/Puppetfile %{buildroot}/%{_datadir}/openstack-puppet/modules/Puppetfile
+cp Puppetfile %{buildroot}/%{_datadir}/openstack-puppet/Puppetfile
 rm -f %{buildroot}/%{_datadir}/openstack-puppet/modules/nova/files/nova-novncproxy.init
 
 
 %files
 %{_datadir}/openstack-puppet/modules/*
+%{_datadir}/openstack-puppet/Puppetfile
 
 
 %changelog
 * [[ current_date|datetime ]] [[ user_name ]] <[[ user_email ]]> - [[ version ]]-[[ release ]]
--  Updated to release [[ version ]]-[[ release ]]
+-  Updated to release [[ version ]]
 [@ for item in puppetfile|dictsort @]
 - [[ item.0 ]] [[ item.1.commit|rjust(item.0, 12) ]]
 [@ endfor @]

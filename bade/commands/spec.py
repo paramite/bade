@@ -111,11 +111,12 @@ def command(config, repo, version, release, old, output, template):
     # tag repo
     rc, stdout, stderr = utils.execute(
         'cd {repo} && '
-        'git tag -a -m $\'{msg}\' {version}-{release}'.format(**_locals)
+        'git tag -a -m $\'{msg}\' {version}'.format(**_locals)
     )
     utils.shout(
-        'New tag {version}-{release} has been created in repo. Please run '
-        '"git push origin {version}-{release}" to upload tag to upstream'.format(**_locals),
+        'New tag {version} has been created in repo. Please run '
+        '"git push origin {version}" to upload tag '
+        'to upstream'.format(**_locals),
         verbose=True,
         level='info'
     )
