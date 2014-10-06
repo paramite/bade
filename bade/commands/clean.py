@@ -73,7 +73,23 @@ def command(config, repo, branch):
         if rc:
             utils.shout(
                 'Failed to remove branch {module_branch}'.format(**_locals),
-                verbose=config.verbose,
+                verbose=True,
+                level='warning'
+            )
+        utils.shout(
+            'Removing remote {module_branch}'.format(**_locals),
+            verbose=config.verbose,
+            level='info'
+        )
+        rc, stdout, stderr = utils.execute(
+            'cd {repo} && '
+            'git remote remove {module_branch}'.format(**_locals),
+            can_fail=False
+        )
+        if rc:
+            utils.shout(
+                'Failed to remove remote {module_branch}'.format(**_locals),
+                verbose=True,
                 level='warning'
             )
 
