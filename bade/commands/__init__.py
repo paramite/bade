@@ -1,2 +1,2 @@
 
-from . import init, sync, spec, clean
+from . import init, sync, spec, clean, add

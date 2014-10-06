@@ -180,5 +180,33 @@ def clean_wrapper(config, repo, branch):
         if config.verbose:
             raise
 
+
+@bade.command('add')
+@click.option('--commit', is_flag=True,
+              help='Create commit after module is added.')
+@click.option('--upstream', required=True,
+              help='URL to upstream GIT repo.')
+@click.option('--hash', required=True,
+              help='Commit hash from upstream GIT repo on which module will '
+                   'be initialized.')
+@click.argument('repo', default='.')
+@pass_config
+def add_wrapper(config, repo, commit, upstream, hash):
+    """Adds new module to Puppetfile and synchronizes base branch accordingly.
+    """
+    try:
+        commands.add.command(config, repo, commit, upstream, hash)
+    except utils.ExecutionError as ex:
+        utils.shout(ex, verbose=True, level='error')
+        utils.shout(
+            '====== stdout ======\n{stdout}\n'
+            '====== stderr ======\n{stderr}'.format(**ex.__dict__),
+            verbose=config.verbose,
+            level=None,
+        )
+    except Exception as ex:
+        utils.shout(ex, verbose=True, level='error')
+        if config.verbose:
+            raise
 if __name__ == '__main__':
     bade()

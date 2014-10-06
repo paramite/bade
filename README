@@ -21,10 +21,13 @@ b) run "bade sync" or "bade init --commit" if you want to generate a commit too
 a) do step 3.
 b) run "spec --version <version> --release <release> --old /path/to/current/file.spec --output /path/to/new/file.spec"
 
+5. To add new Puppet module to Puppetfile and base branch, just run:
+bade add --upstream https://url.to/puppet-module.git --hash <commit hash from puppet-module> --commit
+
 
 TO-DO:
 - spec command for generating SPEC file from template [DONE]
 - spec command should parse patches from old file [DONE]
-- add command for adding modules
+- add command for adding modules [DONE]
 - rm command for removing modules
 - unit tests
