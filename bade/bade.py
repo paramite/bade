@@ -23,6 +23,7 @@
 #
 
 import click
+import logging
 import os
 
 from . import commands
@@ -44,9 +45,22 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 
 
 @click.group()
+@click.option('--log', default='/var/tmp/bade.log', help='Path to logfile')
 @click.option('--verbose', is_flag=True, help='Enable verbose mode')
 @pass_config
-def bade(config, verbose):
+def bade(config, log, verbose):
+    # setup logging
+    handler = logging.FileHandler(filename=log, mode='a')
+    handler.setFormatter(
+        logging.Formatter(
+            '%(asctime)s [%(levelname)s]: %(message)s',
+            '%Y-%m-%d %H:%M:%S'
+        )
+    )
+    logger = logging.getLogger('bade')
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+    # setup config
     config.verbose = verbose
 
 
@@ -79,21 +93,21 @@ def init_wrapper(config, repo, commit):
             raise
 
 
-@bade.command('sync')
+@bade.command('update')
+@click.option('--module', required=True,
+              help='Module which should be updated')
+@click.option('--hash', required=True,
+              help='Commit hash from upstream GIT repo to which module will '
+                   'be updated.')
 @click.option('--commit', is_flag=True,
-              help='Create commit after sync.')
+              help='Create commit after update.')
 @click.argument('repo', default='.')
 @pass_config
-def sync_wrapper(config, repo, commit):
+def sync_wrapper(config, repo, module, hash, commit):
     """Updates git subtree hierarchy from Puppetfile located in cwd or
     from repo given by argument."""
     try:
-        utils.shout(
-            'Updating git subtree hierarchy for {0}'.format(repo),
-            verbose=config.verbose,
-            level='info'
-        )
-        commands.sync.command(config, repo, commit)
+        commands.update.command(config, repo, module, hash, commit)
     except utils.ExecutionError as ex:
         utils.shout(ex, verbose=True, level='error')
         utils.shout(

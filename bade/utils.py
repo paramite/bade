@@ -36,7 +36,7 @@ def execute(cmd, workdir=None, can_fail=True, log=True):
     is raised if command returned non-zero return code. Otherwise
     returns return code and content of stdout and content of stderr.
     """
-    log_msg = ['Executing command: %s' % cmd]
+    log_msg = 'Executing command: %s' % cmd
     if log:
         LOG.debug(log_msg)
 
