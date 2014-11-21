@@ -13,9 +13,9 @@ b) run "bade init" or "bade init --commit" if you want to generate a commit too
 a) clone repo with modules
 b) run "bade sync"
 
-3. To synchronize state of modules with Puppetfile content:
-a) do your updates in Puppetfile, commit changes in Puppetfile
-b) run "bade sync" or "bade init --commit" if you want to generate a commit too
+3. To add a new hash to the Puppetfile and synchronize the module with that commit:
+a) run bade update --module <module name> --hash <commit hash> --commit
+   (e.g.) run bade update --module apache --hash 8d09ecd81ce1001d9461570716d20898fe336f4a --commit
 
 4. To generate SPEC file from Puppetfile and tag repo with "version-release" tag:
 a) do step 3.
