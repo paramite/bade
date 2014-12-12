@@ -95,11 +95,13 @@ def command(config, repo, version, release, old, output, template):
     user_name = user_name.decode('utf-8')
     user_email = user_email.decode('utf-8')
 
+    commit = info['commit'] if 'commit' in info else info['ref']
+
     # generate message for a tag
     msg = '{0}-{1}\\n'.format(version, release)
     for module, info in puppetfile.items():
         msg += '{0}{1}\\n'.format(
-            module, format_rjust(info['commit'], module, 10)
+            module, format_rjust(commit, module, 10)
         )
 
     # generate spec file

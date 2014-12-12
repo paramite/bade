@@ -38,10 +38,16 @@ def create_module_branch(repo, branch, module, info):
     )
     fetch()
     # (re)create branch from given commit
+    commit = info['commit'] if 'commit' in info else info['ref']
+    try:
+        int(commit, 16)
+    except ValueError:
+        # ref is in branch name format
+        commit = '{branch}-{module}/{commit}'.format(**locals())
     rc, stdout, stderr = utils.execute(
         'cd {repo} && '
-        'git checkout -b {branch}-{module} {info[commit]} && '
-        'git checkout {branch}'.format(**_locals)
+        'git checkout -B {branch}-{module} {commit} && '
+        'git checkout {branch}'.format(**locals())
     )
 
 
@@ -105,9 +111,13 @@ def command(config, repo, commit):
         paths = ' '.join(puppetfile.keys())
         status = ''
         for mod in sorted(puppetfile.keys()):
+            commit = (
+                puppetfile[mod]['commit'] if 'commit' in puppetfile[mod] else
+                puppetfile[mod]['ref']
+            )
             status += (
                 '{mod}\\n - initial commit: {commit}\\n\\n'.format(
-                    mod=mod, commit=puppetfile[mod]['commit']
+                    mod=mod, commit=commit
                 )
             )
         msg = utils.COMMIT_MSG.format(status)

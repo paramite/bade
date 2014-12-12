@@ -11,6 +11,11 @@ def command(config, repo, commit, upstream, commit_hash):
     """
     puppetfile = utils.PuppetFile(repo)
     puppetfile.load()
+    for key, info in puppetfile.items():
+        if key == 'commit':
+            break
+        if key == 'ref':
+            break
 
     # update Puppetfile
     branch = utils.get_current_branch(repo)
@@ -21,7 +26,7 @@ def command(config, repo, commit, upstream, commit_hash):
         verbose=True,
         level='info'
     )
-    puppetfile[basename] = {'git': upstream, 'commit': commit_hash}
+    puppetfile[basename] = {'git': upstream, key: commit_hash}
     puppetfile.save()
     rc, stdout, stderr = utils.execute(
         'cd {repo} && '

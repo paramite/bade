@@ -22,7 +22,11 @@ def command(config, repo, module, new_commit, commit):
     # initialization
     puppetfile = utils.PuppetFile(repo)
     puppetfile.load()
-    old_commit = puppetfile[module]['commit']
+    old_commit = (
+        puppetfile[module]['commit']
+            if 'commit' in puppetfile[module] else
+        puppetfile[module]['ref']
+    )
     branch = utils.get_current_branch(repo)
     _locals = locals()
 
@@ -37,7 +41,8 @@ def command(config, repo, module, new_commit, commit):
     init.create_module_branch(repo, branch, module, puppetfile[module])
     merge_module_branch(repo, branch, module, new_commit)
     # updates Puppetfile
-    puppetfile[module]['commit'] = new_commit
+    key = 'commit' if 'commit' in puppetfile[module] else 'ref'
+    puppetfile[module][key] = new_commit
     puppetfile.save()
 
     if commit:
