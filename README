@@ -9,20 +9,15 @@ Examples:
 a) create Puppetfile in your git repo, commit Puppetfile
 b) run "bade init" or "bade init --commit" if you want to generate a commit too
 
-2. To initialize just module branches localy:
-a) clone repo with modules
-b) run "bade sync"
+2. To update module with new commit:
+a) run "bade update --module <module name> --hash <commit hash> --commit"
 
-3. To add a new hash to the Puppetfile and synchronize the module with that commit:
-a) run bade update --module <module name> --hash <commit hash> --commit
-   (e.g.) run bade update --module apache --hash 8d09ecd81ce1001d9461570716d20898fe336f4a --commit
-
-4. To generate SPEC file from Puppetfile and tag repo with "version-release" tag:
+3. To generate SPEC file from Puppetfile and tag repo with "version-release" tag:
 a) do step 3.
-b) run "spec --version <version> --release <release> --old /path/to/current/file.spec --output /path/to/new/file.spec"
+b) run "bade spec --version <version> --release <release> --old /path/to/current/file.spec --output /path/to/new/file.spec"
 
-5. To add new Puppet module to Puppetfile and base branch, just run:
-bade add --upstream https://url.to/puppet-module.git --hash <commit hash from puppet-module> --commit
+4. To add new Puppet module to Puppetfile and base branch:
+a) run "bade add --upstream https://url.to/puppet-module.git --hash <commit hash from puppet-module> --commit"
 
 
 TO-DO:
