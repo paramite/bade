@@ -117,6 +117,9 @@ class PuppetFile(object):
             'Puppetfile'
         )
 
+    def __len__(self):
+        return len(self._content)
+
     def __getitem__(self, key):
         return self._content[key]
 
