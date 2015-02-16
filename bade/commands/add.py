@@ -11,11 +11,11 @@ def command(config, repo, commit, upstream, commit_hash):
     """
     puppetfile = utils.PuppetFile(repo)
     puppetfile.load()
-    for key, info in puppetfile.items():
-        if key == 'commit':
-            break
-        if key == 'ref':
-            break
+    if len(puppetfile) and 'commit' in puppetfile.values()[0]:
+        key = 'commit'
+    else:
+        key = 'ref'
+
 
     # update Puppetfile
     branch = utils.get_current_branch(repo)
