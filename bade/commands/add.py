@@ -19,7 +19,11 @@ def command(config, repo, commit, upstream, commit_hash):
 
     # update Puppetfile
     branch = utils.get_current_branch(repo)
-    basename = os.path.basename(upstream).split('-', 1)[1].split('.', 1)[0]
+    repo_name = os.path.basename(upstream)
+    if '-' in repo_name:
+        basename = repo_name.split('-', 1)[1].split('.', 1)[0]
+    else:
+        basename = repo_name.split('.', 1)[0]
     _locals = locals()
     utils.shout(
         'Adding new module module {basename}'.format(**_locals),
